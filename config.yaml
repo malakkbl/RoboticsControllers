@@ -1,0 +1,43 @@
+# Shared configuration used by EVERY controller (PID, symbolic, RL).
+# Values marked (from zip) come from the advisor's workspace; (assumed) must be measured on the real robot.
+
+robot:
+  wheel_radius: 0.034        # m   (from zip: hardware_controllers.yaml)
+  wheel_separation: 0.177046 # m   (from zip)
+  control_rate_hz: 30        # Hz  (from zip: controller_manager update_rate)
+  v_max: 0.25                # m/s (from zip: joystick turbo speed; used as safe limit)
+  w_max: 1.0                 # rad/s (from zip: joystick turbo yaw rate)
+  a_max: 0.5                 # m/s^2   (assumed) linear acceleration limit
+  alpha_max: 3.0             # rad/s^2 (assumed) angular acceleration limit
+  w_bias: 0.0                # rad/s constant yaw drift (unequal wheels etc.). 0 = ideal; try 0.05 to test the I term
+  cmd_delay_steps: 2         # control steps of command latency (assumed ~66 ms: network + serial)
+
+noise:                       # what the controller "sees" (pose measurement, like /robot_pose)
+  pos_std: 0.005             # m   (assumed)
+  yaw_std: 0.01              # rad (assumed)
+  seed: 0
+
+sim:
+  max_time: 120.0            # s, safety stop
+  goal_tolerance: 0.05       # m, run ends when the end of the path is this close
+
+# Test scenarios. Any path = list of (x, y) waypoints, these are just presets.
+paths:
+  line:      {type: line, length: 2.0}
+  circle:    {type: circle, radius: 0.6}
+  square:    {type: square, side: 1.2}
+  figure8:   {type: figure8, a: 0.8}
+  waypoints: {type: waypoints, points: [[0,0],[1,0],[1.5,0.8],[0.5,1.2],[0,0.6]]}
+
+# Initial robot pose [x, y, theta] for the runs (deliberately not on the path start).
+start_pose: [-0.15, -0.20, 0.5]
+
+controllers:
+  pid:
+    v_ref: 0.18              # m/s desired cruise speed
+    lookahead: 0.30          # m, distance ahead on the path to aim at
+    heading: {kp: 2.5, ki: 0.0, kd: 0.15}
+    cross_track: {kp: 0.0, ki: 0.0, kd: 0.0}   # optional extra loop on lateral error (0 = off)
+    min_speed_factor: 0.15   # v never drops below this fraction of v_ref while tracking
+    slowdown_dist: 0.35      # m, start slowing down this far from the end of the path
+    deriv_filter: 0.3        # 0..1, low-pass on the derivative term
