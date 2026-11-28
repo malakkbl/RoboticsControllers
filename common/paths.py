@@ -1,4 +1,5 @@
 """Paths: any list of (x, y) waypoints -> a dense, arc-length parameterised Path."""
+import pathlib
 import numpy as np
 
 
@@ -65,6 +66,38 @@ def make_path(spec, origin=(0.0, 0.0)):
         raise ValueError(f"unknown path type {t}")
     pts = np.asarray(pts, dtype=float) + np.asarray(origin)
     return Path(pts)
+
+
+def load_waypoints(file):
+    """Read waypoints from a file -> (N, 2) array.
+    .csv / .txt : one 'x,y' per line (comma, semicolon or space separated). '#' starts a comment.
+                  A non-numeric header line BEFORE the first point is skipped.
+    .yaml / .yml: a list of [x, y], or a mapping with a `points:` list."""
+    file = pathlib.Path(file)
+    if file.suffix.lower() in (".yaml", ".yml"):
+        import yaml
+        data = yaml.safe_load(file.read_text())
+        pts = data["points"] if isinstance(data, dict) else data
+    else:
+        pts = []
+        for line in file.read_text().splitlines():
+            parts = line.split("#")[0].replace(";", " ").replace(",", " ").split()
+            if not parts:
+                continue
+            try:
+                pts.append([float(parts[0]), float(parts[1])])
+            except (ValueError, IndexError):
+                if pts:                                   # only a header may be non-numeric
+                    raise ValueError(f"{file}: cannot read line {line!r} (expected 'x,y')")
+    pts = np.asarray(pts, dtype=float)
+    if pts.ndim != 2 or pts.shape[1] != 2 or len(pts) < 2 or not np.isfinite(pts).all():
+        raise ValueError(f"{file}: need at least 2 finite (x, y) waypoints")
+    return pts
+
+
+def path_from_file(file, origin=(0.0, 0.0)):
+    """Build a Path from a waypoint file. `origin` shifts every point (same meaning as in make_path)."""
+    return Path(load_waypoints(file) + np.asarray(origin, dtype=float))
 
 
 def goal_path(start_xy, goal_xy):

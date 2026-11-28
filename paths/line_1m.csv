@@ -1,0 +1,5 @@
+# Example path file: one "x,y" waypoint per line, in metres, in the SAME frame as /robot_pose.
+# A short straight line for the first test on the robot.
+x,y
+0.0,0.0
+1.0,0.0

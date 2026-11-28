@@ -1,0 +1,4 @@
+# Only what the controller needs on the robot (ROS 2 itself is installed separately).
+# The full requirements.txt (matplotlib, pandas, jupyter) is for the notebook on the laptop.
+numpy
+pyyaml
