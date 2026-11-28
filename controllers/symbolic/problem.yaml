@@ -1,0 +1,38 @@
+# THE PROBLEM GIVEN BY THE PROF  (edit only this file when the prof gives the real grid)
+# Convention: cells are [col, row], (0, 0) is the bottom-left cell, col grows along x, row along y.
+#
+#   row 5 | . . . . . . . T |
+#   row 4 | . B . . . . . . |      # = obstacle,  A/B/C = regions,  T = target
+#   row 3 | . . . # # . C C |
+#   row 2 | . . . # # . . . |
+#   row 1 | . . . . . . A . |
+#   row 0 | S . . . . . . . |      S = start
+#           0 1 2 3 4 5 6 7  col
+
+grid:
+  cols: 8               # number of cells along x
+  rows: 6               # number of cells along y
+  cell_size: 0.30       # m, real size of ONE cell of the prof's grid 
+  #(cell_size = arena width ÷ number of columns. For a 2 m arena cut into 8 columns, that's 2.0 ÷ 8 = 0.25 m)
+  origin: [0.0, 0.0]    # m, world (x, y) of the bottom-left corner of cell [0, 0] , Our (0, 0) has to be the same point as the robot's (0, 0) in /robot_pose. We'll deal with that in step 4.
+
+#grid: how many columns and rows, and the real size of one cell in metres. 8 columns × 0.30 m = 2.4 m wide.
+
+obstacles: [[3, 2], [4, 2], [3, 3], [4, 3]]
+
+regions:                # any name works; each region = list of cells
+  A: [[6, 1]]
+  B: [[1, 4]]
+  C: [[6, 3], [7, 3]]
+  target: [[7, 5]]
+
+start_pose: [0.16, 0.16, 0.1]     # [x, y, theta] in m, m, rad (in cell [0, 0], facing about +x)
+# [v2: was [0.15, 0.15, 0.0], exactly on small-cell edges; moved slightly so that sensor noise cannot
+#  make the robot believe it is in a neighbouring cell that has no sign. The tests check this.]
+
+# The task, written as "visit these in order, avoid those all the time".
+# In LTL:  F(A & F(B & F target))  &  G !(C | obstacle | wall)
+# Not used in step 1; steps 2 and 3 read it.
+spec:
+  visit_in_order: [A, B, target]
+  always_avoid: [C]               # obstacles and walls are always avoided automatically

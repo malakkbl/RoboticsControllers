@@ -1,0 +1,34 @@
+# Abstraction settings for the symbolic controller (OUR tuning, not the prof's problem).
+# Later you can paste this block into config.yaml under `controllers:` as `symbolic:`;
+# until then the code reads this file automatically.
+symbolic:
+  subdiv: 12                # each prof cell is cut into subdiv x subdiv small cells (0.30 m / 12 = 2.5 cm) to make it easier to the computer
+                            # [v2: was 10 (3 cm); 2.5 cm was needed once sensor noise was counted in step 4]
+  n_theta: 32               # heading is cut into 32 slices of 11.25 deg  (below is an answer to why we cut the heading aka the angle we are pointing to)
+  tau: 1.5                  # s, duration of one move = one symbolic step, including the stop at the end
+                            # [v2: was 1.0 s, the time one symbolic input (v, w) was held]
+  motion: rest_to_rest      # [v2] each move starts and ends stopped, with smooth speed ramps (see dynamics.py)
+  n_average: 9              # [v2] pose readings averaged while stopped at the end of each move (less sensor noise)
+  #v_levels and w_levels: the "menu" of commands the robot can choose from. Speeds are 0, 0.1 or 0.2 m/s. Turn rates are −0.8, −0.4, 0, 0.4 or 0.8 rad/s. That's 3 × 5 = 15 pairs. We drop "stand still" (0, 0), so 14 are left. They all stay under the robot limits in config.yaml (0.25 m/s and 1 rad/s).
+  v_levels: [0.0, 0.1, 0.2]          # m/s, sampled linear speeds (<= robot.v_max) [v2: cruise speeds of a move]
+  w_levels: [-0.8, -0.4, 0.0, 0.4, 0.8]  # rad/s, sampled turn rates (<= robot.w_max) [v2: cruise turn rates]
+  disturbance: [0.01, 0.01, 0.02]    # max error per step on [x (m), y (m), theta (rad)]  (assumed, tune in step 4)
+                                     # [v2: the simulator follows the moves exactly, so this is kept as a margin for the real robot]
+  robot_radius: 0.10        # m, obstacles/walls/avoid regions are inflated by this (assumed, we need to measure robot)
+  # measurement_error: [0.005, 0.005, 0.01]  # [v2] optional; default = 3 x noise std of config.yaml / sqrt(n_average)
+# Rule of thumb (found while testing): the reachable box must be clearly smaller than the free
+# corridors. With these values one step moves <= 0.2 m with about +-4.5 cm uncertainty, so a
+# corridor needs ~20 cm of free space for the robot CENTRE (= cell width - 2 * robot_radius).
+# [v2: why the values changed in step 4 (tests in the simulator):
+#  - "constant" moves (speed changes instantly) drifted up to 8 cm / 0.5 rad from the model in common/robot.py,
+#    because of acceleration limits and the command delay. "rest_to_rest" moves are followed exactly.
+#  - with 3 cm cells, the corner target was not reachable once sensor noise was counted; 2.5 cm cells fix it.]
+
+
+
+#Why cut the heading at all? Because where the robot goes depends on which way it's facing. Picture "drive forward for 1 s" from the same spot:
+#facing east, it ends up 20 cm to the right
+#facing north, it ends up 20 cm up
+#If a state were only "which small cell", the graph couldn't say where that command leads. So a state must also include the heading. 
+#A graph can only have a finite number of states, so we cut the heading into slices, just like we cut the floor into cells.
+#it's like states are made of "which small cell" + "which slice of heading". The more slices, the more accurate the graph, but the bigger it is. 32 slices = 11.25 deg each, which is a good compromise.
